@@ -1,20 +1,28 @@
-FROM ubuntu:latest
+FROM devraymondsh/ubuntu-rust:latest AS build
 LABEL authors="matthias"
 
-# Update default packages
 RUN apt-get update
 
-# Get Ubuntu packages
 RUN apt-get install -y \
     build-essential \
-    cargo \
-    
+    libvirt-daemon-system  \
+    libvirt-clients
 
 WORKDIR /cli_libvirt_backup_manager
-COPY Cargo.toml ./
-COPY src ./
-COPY build.rs ./
+COPY . .
 
+RUN cargo build --release
 
+FROM ubuntu:24.04
 
-ENTRYPOINT ["top", "-b"]
+RUN apt-get update
+RUN apt-get install -y \
+    libvirt-daemon-system  \
+    libvirt-clients
+
+WORKDIR /cli_libvirt_backup_manager
+
+COPY --from=build /cli_libvirt_backup_manager/target/release/cli_libvirt_backup_manager ./cli_libvirt_backup_manager
+COPY --from=build /cli_libvirt_backup_manager/assets/example.xml ./example.xml
+
+ENTRYPOINT ["./cli_libvirt_backup_manager"]
