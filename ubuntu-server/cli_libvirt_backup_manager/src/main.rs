@@ -41,24 +41,20 @@ enum VirtualMachineState {
 }
 
 trait VirtualMachine {
-    fn backup_xml(self: &Self) -> PathBuf;
-    fn backup_qcow(self: &Self) -> PathBuf;
-    fn stop(self: &Self) -> bool;
-    fn start(self: &Self) -> bool;
-    fn undefine(self: &Self) -> bool;
+    fn restore(self: &Self, backup: &Backup) -> bool;
+    fn backup(self: &Self) -> bool;
 }
 
 struct VM {
     name: String,
     state: VirtualMachineState,
 }
-
 impl From<Backup> for VM {
     fn from(backup: Backup) -> Self {
-        //let name = parse_xml(backup.xml).get("name");
-        let name = "TODO".to_string();
+        let xml_parser = BackupXMLParser::new(backup.xml);
+        let name = xml_parser.get_name();
         VM::new(
-            name,
+            xml_parser.get_name().unwrap_or_default(),
             VirtualMachineState::Undefined
         )
     }
@@ -80,38 +76,52 @@ impl VM {
             state
         }
     }
+    fn backup_xml() -> PathBuf {
+        // todo!("virsh dumpxml <name>");
+
+        PathBuf::new()
+    }
+    fn backup_qcow() -> PathBuf {
+        // todo!("qemu_img convert -p -f qcow2 -O qcow2 <src> <backup>");
+        PathBuf::new()
+    }
+    fn stop(self: &Self) -> bool {
+        true
+    }
+    fn start(self: &Self) -> bool {
+        true
+    }
+    fn undefine(self: &Self) -> bool {
+        true
+    }
+}
+
+impl VirtualMachine for VM {
+    fn backup(self: &Self) -> bool {
+        false
+    }
+
+    fn restore(self: &Self, backup: &Backup) -> bool {
+        false
+    }
 }
 
 struct Backup {
     qcow: PathBuf,
     xml: PathBuf
 }
-
-
-impl VM {
-    fn dump_xml() -> PathBuf {
-        PathBuf::new()
-    }
-    fn backup_qcow() -> PathBuf {
-        PathBuf::new()
-    }
-}
-
 struct BackupXMLParser {
     xml: PathBuf
 }
-
 impl BackupXMLParser {
     pub fn new(path_buf: PathBuf) -> Self {
         BackupXMLParser {
             xml: path_buf
         }
     }
-
     pub fn get_name(self: &Self) -> Option<String> {
         self.get_node_text("name")
     }
-
     pub fn get_uuid(self: &Self) -> Option<String> {
         self.get_node_text("uuid")
     }
@@ -122,7 +132,6 @@ impl BackupXMLParser {
 
         contents
     }
-
     fn get_node_text(&self, node: &str) -> Option<String> {
         let xml = self.read_xml();
         let doc = roxmltree::Document::parse(&xml).ok()?;
@@ -132,9 +141,9 @@ impl BackupXMLParser {
 }
 
 fn main() {
-    let mut cli = Cli::parse();
+    let cli = Cli::parse();
 
-    let example_xml = PathBuf::from("/Users/matthias/Projects/monorepo/ubuntu-server/cli_libvirt_backup_manager/assets/example.xml");
+    let example_xml = PathBuf::from("/cli_libvirt_backup_manager/example.xml");
     let xml_parser = BackupXMLParser::new(example_xml);
 
     println!("Name: {}, UUID: {}", xml_parser.get_name().unwrap(), xml_parser.get_uuid().unwrap());
