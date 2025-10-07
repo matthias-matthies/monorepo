@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
@@ -7,6 +5,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use chrono::{Local, DateTime};
+
 
 const QCOW_DIR: &str = "/var/lib/libvirt/images";
 const XML_DIR: &str = "/etc/libvirt/qemu";
@@ -149,9 +148,55 @@ fn main() {
     println!("Name: {}, UUID: {}", xml_parser.get_name().unwrap(), xml_parser.get_uuid().unwrap());
 }
 
+/*
+
+use std::ffi::CString;
+use std::ptr;
+
+fn main() {
+    unsafe {
+        // Connect to libvirt
+        let conn_uri = CString::new("qemu:///system").unwrap();
+        let conn = virConnectOpen(conn_uri.as_ptr());
+        if conn.is_null() {
+            panic!("Failed to connect to libvirt");
+        }
+
+        // Lookup the domain by name
+        let dom_name = CString::new("haos").unwrap();
+        let dom = virDomainLookupByName(conn, dom_name.as_ptr());
+        if dom.is_null() {
+            virConnectClose(conn);
+            panic!("Domain not found");
+        }
+
+        let list = virDomainList(conn);
+        println!("{:#?}", list);
+
+        // Get XML with desired flags
+        let xml_flags = VIR_DOMAIN_XML_INACTIVE; // For --inactive equivalent
+        let xml_ptr = virDomainGetXMLDesc(dom, xml_flags);
+        if xml_ptr.is_null() {
+            virDomainFree(dom);
+            virConnectClose(conn);
+            panic!("Error fetching domain XML");
+        }
+
+        // Use the XML
+        let xml = CString::from_raw(xml_ptr);
+        println!("XML: {}", xml.to_str().unwrap());
+
+        // Clean up
+        virDomainFree(dom);
+        virConnectClose(conn);
+    }
+}
+ */
+/*
 fn run_backup(domain_name: String) {
     let now: DateTime<Local> = Local::now();
     let now = now.format("%Y_%m_%d").to_string();
 
     println!("Now: {}", now);
 }
+ */
